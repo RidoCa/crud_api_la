@@ -12,7 +12,6 @@ use Illuminate\Validation\Rule;
 class authController extends Controller
 {
 
-
     public $successStatus = 200;
 
     public function login(Request $request){
@@ -21,9 +20,11 @@ class authController extends Controller
             'password' => $request->password
         ];
  
-        if (auth()->attempt($data)) {
-            $token = auth()->user()->createToken('LaravelAuthApp')->accessToken;
-            return response()->json(['token' => $token], 200);
+        if (Auth::attempt($data)) {
+            $user = Auth::user();
+            $success['key_login'] =  $user->createToken('LaravelAuthApp')->accessToken;
+            $success['role'] =  auth()->user()->role;
+            return response()->json(['token' => $success], 200);
         } else {
             return response()->json(['error' => 'Unauthorised'], 401);
         }
@@ -33,7 +34,8 @@ class authController extends Controller
             $dataUser = User::where([['username','=',$request->username],['email','=',$request->email]])->first();
             
         if($dataUser!=null){
-            $success['key'] =  Str::random(8);
+            $success['key_login'] =  $dataUser->createToken('LaravelAuthApp')->accessToken;
+            $success['new_password'] =  Str::random(8);
             return response()->json(['success' => $success], $this->successStatus);
         }
         else{
@@ -62,8 +64,9 @@ class authController extends Controller
         $input['password'] = bcrypt($input['password']);
         $user = User::create($input);
         $token = $user->createToken('LaravelAuthApp')->accessToken;
-
-        return response()->json(['success'=>$token], $this->successStatus);
+        $success['key_login'] =  $dataUser->createToken('LaravelAuthApp')->accessToken;
+        $success['new_password'] =  'berhasil login';
+        return response()->json(['success'=>$success], $this->successStatus);
     }
 
     public function logout()
