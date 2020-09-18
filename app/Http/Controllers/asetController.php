@@ -4,12 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\asetModel;
 use Illuminate\Http\Request;
+use Auth;
+use Illuminate\Validation\Rule;
+use Validator;
+
 
 class asetController extends Controller
 {
     public function index()
     {
-        $aset = auth()->user()->aset;
+ 
+            $aset = asetModel::all();
  
         return response()->json([
             'success' => true,
@@ -19,7 +24,7 @@ class asetController extends Controller
  
     public function show($id)
     {
-        $aset = auth()->user()->aset()->find($id);
+        $aset = asetModel::where('id_user','=',$id)->get();
  
         if (!$aset) {
             return response()->json([
@@ -36,26 +41,30 @@ class asetController extends Controller
  
     public function store(Request $request)
     {
-        $this->validate($request, [
+    
+        $validator = Validator::make($request->all(), [
             'kode_aset' => 'required|unique:App\Models\asetModel,kode_aset',
             'nama_aset' => 'required',
             'jumlah' => 'required|numeric',
-            'kode_aset' => 'required',
             'merk' => 'required',
             'desc' => 'required'
-            
-            
         ]);
+ 
+        if ($validator->fails()) {
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
  
         $aset = new asetModel();
         $aset->kode_aset = $request->kode_aset;
         $aset->nama_aset = $request->nama_aset;
         $aset->jumlah = $request->jumlah;
-        $aset->kode_aset = $request->kode_aset;
         $aset->merk = $request->merk;
         $aset->desc = $request->desc;
+        $aset->id_user = 1;
+        
+        $aset->save();
  
-        if (auth()->user()->aset()->save($aset))
+        if ($aset!=null)
             return response()->json([
                 'success' => true,
                 'data' => $aset->toArray()
@@ -67,22 +76,32 @@ class asetController extends Controller
             ], 500);
     }
  
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        $aset = auth()->user()->aset()->find($id);
  
-        if (!$post) {
+        $aset = asetModel::where('id_aset','=',$request->id_aset)->first();
+ 
+        if (!$aset) {
             return response()->json([
                 'success' => false,
                 'message' => 'aset not found'
             ], 400);
         }
  
-        $updated = $aset->fill($request->all())->save();
+        $aset->kode_aset = $request->kode_aset;
+        $aset->nama_aset = $request->nama_aset;
+        $aset->jumlah = $request->jumlah;
+        $aset->merk = $request->merk;
+        $aset->desc = $request->desc;
+        $aset->id_user = 1;
+        $aset->save();
  
-        if ($updated)
+ 
+        if ($aset)
             return response()->json([
-                'success' => true
+                'success' => true,
+                'message' => 'aset has been updated'
+                
             ]);
         else
             return response()->json([
@@ -93,12 +112,13 @@ class asetController extends Controller
  
     public function destroy($id)
     {
-        $aset = auth()->user()->aset()->find($id);
+        $aset = asetModel::where('id_aset','=',$id)->first();
  
         if (!$aset) {
             return response()->json([
                 'success' => false,
-                'message' => 'aset not found'
+                'message' => 'aset not found',
+                'message' => 'aset has ben deleted'
             ], 400);
         }
  
